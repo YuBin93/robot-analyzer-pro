@@ -1,79 +1,117 @@
-# ... (import 和 clean_text, get_infobox_data 函数保持不变)
 import requests
-from bs4 import BeautifulSoup
 import json
+import os
 from datetime import datetime
-import re
+from bs4 import BeautifulSoup
+import google.generativeai as genai
 
-def clean_text(text):
-    text = re.sub(r'\[.*?\]', '', text)
-    text = re.sub(r'\s+', ' ', text)
-    return text.strip()
+# 从环境变量中获取API Key
+API_KEY = os.getenv("GEMINI_API_KEY")
 
-def get_infobox_data(soup):
-    # ... (和上一版优化后的函数一样)
-    infobox = soup.find('table', {'class': 'infobox'})
-    if not infobox: return {}
-    data = {}
-    rows = infobox.find_all('tr')
-    for row in rows:
-        header = row.find('th')
-        value_cell = row.find('td')
-        if header and value_cell:
-            key = clean_text(header.text).lower()
-            value_text = value_cell.get_text(separator='|', strip=True).split('|')[0]
-            val = clean_text(value_text)
-            data[key] = val
-    return data
+if not API_KEY:
+    raise ValueError("Gemini API Key not found. Please set the GEMINI_API_KEY secret.")
 
+# 配置Google Generative AI SDK
+genai.configure(api_key=API_KEY)
 
-def scrape_robot_data(name, url):
-    # ... (和上一版优化后的函数一样)
+# 目标机器人列表保持不变
+ROBOT_WIKI_URLS = {
+    'spot': 'https://en.wikipedia.org/wiki/Spot_(robot)',
+    'atlas': 'https://en.wikipedia.org/wiki/Atlas_(robot)',
+    'digit': 'https://en.wikipedia.org/wiki/Digit_(robot)'
+}
+
+def build_prompt(page_content):
+    """构建一个高质量的Prompt，指导Gemini完成任务"""
+    
+    desired_json_structure = """
+    {
+      "name": "Robot's full name",
+      "manufacturer": "The company that created the robot",
+      "type": "Type of robot (e.g., Quadruped, Humanoid)",
+      "specs": {
+        "Weight": "Weight of the robot (e.g., 75 kg)",
+        "Payload": "Payload capacity (e.g., 25 kg)",
+        "Speed": "Maximum speed (e.g., 1.5 m/s)"
+      },
+      "modules": {
+        "Perception": { "components": ["List of sensors like Cameras, LiDAR, IMU"], "suppliers": ["List of potential suppliers"] },
+        "Locomotion": { "components": ["List of components like Actuators, Hydraulic systems"], "suppliers": ["List of potential suppliers"] }
+      }
+    }
+    """
+
+    # Gemini 对指令的理解能力很强，我们可以直接要求它输出JSON
+    prompt = f"""
+    Analyze the following text from a Wikipedia page about a robot.
+    Your task is to extract key information and provide the output ONLY in a valid JSON format.
+    The JSON object must strictly adhere to the structure shown below.
+    If a piece of information is not available in the text, use "N/A" as the value.
+    Do not include any introductory text, closing remarks, or markdown formatting like ```json.
+    
+    ### Desired JSON Structure:
+    {desired_json_structure}
+
+    ### Page Content to Analyze:
+    ---
+    {page_content[:20000]} 
+    ---
+
+    ### Extracted JSON Data:
+    """
+    return prompt
+
+def scrape_with_gemini(name, url):
+    """使用Gemini模型抓取单个机器人的数据"""
+    print(f"✨ Attempting to scrape '{name}' with Gemini...")
     try:
-        response = requests.get(url, headers={'User-Agent': 'Cool-Robot-App-Scraper/1.0'})
+        # 1. 获取网页纯文本
+        response = requests.get(url, headers={'User-Agent': 'Robot-Genesis-Gemini-Scraper/1.0'})
         response.raise_for_status()
         soup = BeautifulSoup(response.content, 'html.parser')
-        infobox_data = get_infobox_data(soup)
-        robot_data = {
-            'name': clean_text(soup.find('h1', {'id': 'firstHeading'}).text),
-            'manufacturer': infobox_data.get('manufacturer', 'N/A'),
-            'type': infobox_data.get('type', 'N/A'),
-            'specs': {
-                'Weight': infobox_data.get('weight', infobox_data.get('mass', 'N/A')),
-                'Payload': infobox_data.get('payload', 'N/A'),
-                'Speed': infobox_data.get('speed', 'N/A'),
-            },
-            'modules': { 'Perception': {'components': ['Cameras', 'IMU', 'Sensors'], 'suppliers': ['Various']}, 'Locomotion': {'components': ['Actuators', 'Legs', 'Motors'], 'suppliers': ['Various']}, }
-        }
-        print(f"✅ Successfully scraped data for: {name}")
+        main_content = soup.find(id='mw-content-text')
+        page_text = main_content.get_text(separator=' ', strip=True) if main_content else soup.get_text(separator=' ', strip=True)
+
+        # 2. 构建Prompt
+        prompt = build_prompt(page_text)
+        
+        # 3. 初始化并调用Gemini模型
+        model = genai.GenerativeModel('gemini-pro')
+        # 添加安全设置，降低因安全策略被阻断的概率
+        safety_settings = [
+            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+        ]
+        
+        # 让模型生成内容
+        response = model.generate_content(prompt, safety_settings=safety_settings)
+        
+        # 4. 解析Gemini返回的结果
+        # response.text 直接就是模型生成的字符串
+        json_text = response.text
+        
+        # 验证并加载JSON
+        robot_data = json.loads(json_text)
+        
+        print(f"✅ Successfully parsed Gemini response for: {name}")
         return robot_data
+
     except Exception as e:
-        print(f"❌ Failed to scrape data for {name}. Error: {e}")
+        # 捕获并打印更详细的错误信息
+        if 'response' in locals() and hasattr(response, 'prompt_feedback'):
+             print(f"Prompt Feedback: {response.prompt_feedback}")
+        print(f"❌ Failed to scrape data for '{name}' with Gemini. Error: {e}")
         return None
 
-
 if __name__ == '__main__':
-    WIKI_BASE_URL = 'https://en.wikipedia.org/wiki/'
     all_robots_data = {}
-
-    # 新的核心逻辑：从文件读取目标列表
-    try:
-        with open('robots_to_scrape.txt', 'r') as f:
-            robot_pages = [line.strip() for line in f if line.strip()]
-    except FileNotFoundError:
-        print("❌ `robots_to_scrape.txt` not found. Exiting.")
-        robot_pages = []
-
-    print(f"🔥 Found {len(robot_pages)} robots to scrape: {robot_pages}")
-
-    for page_name in robot_pages:
-        # 将页面名转换为小写且适合做JSON key的格式
-        robot_key = page_name.lower().replace('_(robot)', '').replace('_', ' ')
-        robot_url = WIKI_BASE_URL + page_name
-        data = scrape_robot_data(robot_key, robot_url)
+    for name, url in ROBOT_WIKI_URLS.items():
+        data = scrape_with_gemini(name, url)
         if data:
-            all_robots_data[robot_key] = data
-    
+            all_robots_data[name] = data
+            
     output = {
         'last_updated': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC'),
         'robots': all_robots_data
@@ -82,4 +120,4 @@ if __name__ == '__main__':
     with open('data/robots.json', 'w', encoding='utf-8') as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
         
-    print("🚀 Scraping complete. `data/robots.json` has been updated.")
+    print("🚀 Gemini-driven scraping complete. `data/robots.json` has been updated.")
