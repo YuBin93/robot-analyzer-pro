@@ -1,46 +1,37 @@
-name: Scrape Robot Data
-
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * *'
+# ... (name, on, 等部分保持不变) ...
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
-
-    # =======================================================
-    # VVVV  这就是我们添加的修复代码 VVVV
-    permissions:
-      contents: write
-    # ^^^^  授予工作流写入仓库内容的权限 ^^^^
-    # =======================================================
-
+    # 将env部分更新为如下内容
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    
     steps:
+      # 第一步：检出代码 (不变)
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # 第二步：设置Python环境 (不变)
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
+      # 第三步：安装依赖库 (需要更新)
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install requests beautifulsoup4
+          # 我们将使用Google官方的SDK，它让调用变得更简单
+          pip install -q -U google-generativeai beautifulsoup4 requests
 
+      # 第四步和第五步 (不变)
       - name: Run scraper
         run: python scripts/scraper.py
-
       - name: Commit and push if data changed
         run: |
           git config --global user.name 'GitHub Actions Bot'
-          git config --global user.email 'actions-bot@github.com'
+          git config --global user.email 'actions@github.com'
           git add data/robots.json
-          if git diff --staged --quiet; then
-            echo "No changes to commit."
-          else
-            git commit -m "feat: Auto-update robot data"
-            git push
-          fi
+          git diff --staged --quiet || git commit -m "feat: Update robot data (via Gemini)"
+          git push
