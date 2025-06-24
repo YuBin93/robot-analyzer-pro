@@ -1,10 +1,74 @@
 {
-  "last_updated": "2025-06-24 09:58:22 UTC",
+  "last_updated": "2025-06-24 10:11:05 UTC",
   "robots": {
     "spot": {
       "name": "Boston Dynamics",
       "manufacturer": "N/A",
       "type": "N/A",
+      "specs": {
+        "Weight": "N/A",
+        "Payload": "N/A",
+        "Speed": "N/A"
+      },
+      "modules": {
+        "Perception": {
+          "components": [
+            "Cameras",
+            "IMU",
+            "Sensors"
+          ],
+          "suppliers": [
+            "Various"
+          ]
+        },
+        "Locomotion": {
+          "components": [
+            "Actuators",
+            "Legs",
+            "Motors"
+          ],
+          "suppliers": [
+            "Various"
+          ]
+        }
+      }
+    },
+    "atlas": {
+      "name": "Atlas (robot)",
+      "manufacturer": "Boston Dynamics",
+      "type": "Humanoid robot",
+      "specs": {
+        "Weight": "N/A",
+        "Payload": "N/A",
+        "Speed": "N/A"
+      },
+      "modules": {
+        "Perception": {
+          "components": [
+            "Cameras",
+            "IMU",
+            "Sensors"
+          ],
+          "suppliers": [
+            "Various"
+          ]
+        },
+        "Locomotion": {
+          "components": [
+            "Actuators",
+            "Legs",
+            "Motors"
+          ],
+          "suppliers": [
+            "Various"
+          ]
+        }
+      }
+    },
+    "asimo": {
+      "name": "ASIMO",
+      "manufacturer": "Honda",
+      "type": "Humanoid",
       "specs": {
         "Weight": "N/A",
         "Payload": "N/A",
