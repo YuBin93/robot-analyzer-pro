@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>机器人技术分析器 (自动更新版)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-sankey/0.12.3/d3-sankey.min.js"></script>
+    <style>
+        /* CSS样式与之前版本相同，为了简洁此处省略，您可以从上一个版本复制粘贴 */
+        * { margin: 0; padding: 0; box-sizing: border-box; } body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif; background: #f0f2f5; color: #333; } .container { max-width: 1200px; margin: 0 auto; padding: 20px; } .header { text-align: center; margin-bottom: 30px; } .header h1 { font-size: 2.5rem; color: #1a1a1a; } .header p { color: #666; font-size: 1.1rem; } .search-box { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); } .search-input { width: 100%; padding: 15px 20px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; } .search-btn { width: 100%; background: #007bff; color: white; border: none; padding: 15px 30px; border-radius: 8px; margin-top: 15px; cursor: pointer; font-size: 18px; font-weight: bold; } .results { margin-top: 30px; } .robot-card { background: white; padding: 25px; margin: 15px 0; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); } #sankey-diagram { width: 100%; height: 450px; margin: 30px 0; background: white; border-radius: 12px; padding: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); } .loader { text-align: center; padding: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 机器人分析器 (自动更新版)</h1>
+            <p>数据每日自动从网络抓取，保持最新</p>
+        </div>
+        
+        <div class="search-box">
+            <input type="text" id="robotInput" class="search-input" placeholder="正在加载机器人列表...">
+            <button onclick="searchRobot()" class="search-btn">🔍 分析</button>
+        </div>
+        
+        <div id="results" class="results">
+            <div class="loader">正在从云端加载最新数据...</div>
+        </div>
+        <div id="sankey-diagram"></div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
