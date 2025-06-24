@@ -1,12 +1,35 @@
 {
-  "last_updated": "Never",
+  "last_updated": "2025-06-24 09:32:31 UTC",
   "robots": {
-    "placeholder": {
-      "name": "等待数据同步",
-      "manufacturer": "自动化脚本正在运行...",
-      "type": "机器人",
-      "specs": {},
-      "modules": {}
+    "spot": {
+      "name": "Boston Dynamics",
+      "manufacturer": "N/A",
+      "type": "Robot",
+      "specs": {
+        "Weight": "N/A",
+        "Payload": "N/A",
+        "Speed": "N/A"
+      },
+      "modules": {
+        "Perception": {
+          "components": [
+            "Cameras",
+            "IMU"
+          ],
+          "suppliers": [
+            "Various"
+          ]
+        },
+        "Locomotion": {
+          "components": [
+            "Actuators",
+            "Legs"
+          ],
+          "suppliers": [
+            "Various"
+          ]
+        }
+      }
     }
   }
 }
