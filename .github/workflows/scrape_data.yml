@@ -8,6 +8,11 @@ on:
 jobs:
   scrape:
     runs-on: ubuntu-latest
+    
+    # 新增下面这个 permissions 块，授予写入权限
+    permissions:
+      contents: write
+      
     env:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
     
@@ -23,16 +28,14 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          # 修正了这里的包名
           pip install -q -U google-generativeai beautifulsoup4 requests
 
       - name: Run scraper
         run: python scripts/scraper.py
 
       - name: Commit and push if data changed
-        run: |
-          git config --global user.name 'GitHub Actions Bot'
-          git config --global user.email 'actions@github.com'
-          git add data/robots.json
-          git diff --staged --quiet || git commit -m "feat: Update robot data (via Gemini)"
-          git push
+        # 这里使用了更健壮的提交方式
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "feat: Auto-update robot data via Gemini"
+          file_pattern: data/robots.json
