@@ -1,10 +1,10 @@
 {
-  "last_updated": "2025-06-24 09:32:31 UTC",
+  "last_updated": "2025-06-24 09:58:22 UTC",
   "robots": {
     "spot": {
       "name": "Boston Dynamics",
       "manufacturer": "N/A",
-      "type": "Robot",
+      "type": "N/A",
       "specs": {
         "Weight": "N/A",
         "Payload": "N/A",
@@ -14,7 +14,8 @@
         "Perception": {
           "components": [
             "Cameras",
-            "IMU"
+            "IMU",
+            "Sensors"
           ],
           "suppliers": [
             "Various"
@@ -23,7 +24,8 @@
         "Locomotion": {
           "components": [
             "Actuators",
-            "Legs"
+            "Legs",
+            "Motors"
           ],
           "suppliers": [
             "Various"
